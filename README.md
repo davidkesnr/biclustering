@@ -362,7 +362,7 @@ plot(mat.k, key=list(side=3, cex.axis=0.75), palette('Dark2'), digits=2,
      main = '', axis.row = 2)
 ```
 
-![](AIC_EUstrat_12_10_2021.png)
+![](README_files/figure-gfm/AIC_EUstrat_12_10_2021.png)
 
 The surface appears to be doing what is expected - I would expect to see
 a continuous surface without major fluctuations in
