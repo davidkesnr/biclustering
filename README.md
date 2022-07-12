@@ -1,4 +1,4 @@
-Biclustering multiple variables with a semi-automated cluster
+Biclustering multiple variables using a semi-automated cluster
 optimization protocol
 ================
 David Kesner
