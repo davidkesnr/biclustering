@@ -180,39 +180,19 @@ parsimony by penalising biclustering implementations in proportion to
 the number of clusters used, while rewarding implementations for the
 reduction in dataset noise that they achieve. This is the formulation:
 
-![
-\\begin{equation}
-k = n.ln⁡\\Biggl(\\bigl(\\frac{sse}{n} \\bigr)+2(r.c)\\Biggr)
-\\end{equation}
-](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%0A%5Cbegin%7Bequation%7D%0Ak%20%3D%20n.ln%E2%81%A1%5CBiggl%28%5Cbigl%28%5Cfrac%7Bsse%7D%7Bn%7D%20%5Cbigr%29%2B2%28r.c%29%5CBiggr%29%0A%5Cend%7Bequation%7D%0A "
-\begin{equation}
-k = n.ln⁡\Biggl(\bigl(\frac{sse}{n} \bigr)+2(r.c)\Biggr)
-\end{equation}
-")
+``` r
+k = n*log(sse/n) + 2*(r*c)
+```
 
-where
-![n](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;n "n")
-is the number of grid cells,
-![r](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r "r")
-and
-![c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;c "c")
-are the number of spatial and temporal clusters respectively, and
-![sse](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;sse "sse")
-is the final sum of squared errors across all biclusters within a given
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
-combination. The
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
-combination that results in the lowest value of
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
-is selected as the optimal combination. We can now use this algorithm to
-select from multiple
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
-combinations, and see which minimizes this value
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k").
+where `n` is the number of grid cells, `r` and `c` are the number of
+spatial and temporal clusters respectively, and `sse` is the final sum
+of squared errors across all biclusters within a given `rc` combination.
+The `rc` combination that results in the lowest value of `k` is selected
+as the optimal combination. We can now use this algorithm to select from
+multiple `rc` combinations, and see which minimizes this value `k`.
 
 Since the biclustering algorithm can be computationally intensive, and I
-run it tens or possibly hundreds of times to find the best
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
+run it tens or possibly hundreds of times to find the best `rc`
 combination, this section of the analysis is best done by using a loop,
 which runs multiple loop iterations simultaneously by distributing them
 across multiple CPU’s. To do this, I use the `foreach` and `parallel`
@@ -230,18 +210,13 @@ numCores
 I am recruiting 15 CPU’s for the biclustering.
 
 The `foreach` loop uses a single index vector as a loop counter, but I
-need to be able to loop through two indices (one for
-![r](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r "r")
-and one for
-![c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;c "c"))
-simultaneously. To achieve this, I make a dataframe with all
-combinations of individual
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
-pairs, and will use the row index of the dataframe as the `foreach` loop
-counter to sequentially extract and run the
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
-combination contained in each row. I set the range of site clusters to
-attempt from 2 to 18, and the time clusters from 2 to 13:
+need to be able to loop through two indices (one for `r` and one for
+`c`) simultaneously. To achieve this, I make a dataframe with all
+combinations of individual `rc` pairs, and will use the row index of the
+dataframe as the `foreach` loop counter to sequentially extract and run
+the ``` r``c ``` combination contained in each row. I set the range of
+site clusters to attempt from 2 to 18, and the time clusters from 2 to
+13:
 
 ``` r
 #get an index dataframe
@@ -274,28 +249,23 @@ There are 204 rows, which agrees with all possible combinations (12x17),
 and the alignment of the site and time clusters appears correct, with
 each site cluster value having 2-13 time clusters.
 
-I am ready to run the `foreach` loop. I’ll calculate the
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
-metric for each loop iteration, and for this I need to have the total
-number of sites
-(![n](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;n "n"))
-on hand:
+I am ready to run the `foreach` loop. I’ll calculate the `k` metric for
+each loop iteration, and for this I need to have the total number of
+sites (`n`) on hand:
 
 ``` r
 nsites <- length(rownames(bcdat))
 ```
 
-Next, I must specify the way that `foreach` must combine the output
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
+Next, I must specify the way that `foreach` must combine the output `k`
 values of each iteration running in parallel. I choose `cbind` because I
 want outputs to be concatenated together into one vector that matches
 the order of rows in the `idx` dataframe. This makes it simple to add
 the loop output as a row to the `idx` dataframe.
 
-I run the biclustering algorithm with 500 repetitions for each
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
+I run the biclustering algorithm with 500 repetitions for each `rc`
 combination to avoid convergence to local optima (see Reisner et
-al. 2020 for more information). I use the `rep_biclustermd()` function
+al. (2020) for more information). I use the `rep_biclustermd()` function
 for this:
 
 ``` r
@@ -334,12 +304,11 @@ head(output[1,])
     ## result.1 result.2 result.3 result.4 result.5 result.6 
     ## 4240.206 4181.432 4161.682 4150.996 4142.501 4137.276
 
-R has outputted a single row and 204 columns, with the
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
-value of each loop being stored in the separate columns. The `foreach`
-loop has labelled columns in the numeric order of the row index of the
-`idx` dataframe. Since we know the order of rows of the `idx` dataframe
-is congruent with the order of the output of the `foreach` loop, to
+R has outputted a single row and 204 columns, with the `k` value of each
+loop being stored in the separate columns. The `foreach` loop has
+labelled columns in the numeric order of the row index of the `idx`
+dataframe. Since we know the order of rows of the `idx` dataframe is
+congruent with the order of the output of the `foreach` loop, to
 visualize the output I can prep a simple matrix with rows and columns
 labelled according to the `idx` site and time clusters for plotting:
 
@@ -366,18 +335,13 @@ plot(mat.k, key=list(side=3, cex.axis=0.75), palette('Dark2'), digits=2,
 ![](README_files/figure-gfm/AIC_EUstrat_12_10_2021.png)
 
 The surface appears to be doing what is expected - I would expect to see
-a continuous surface without major fluctuations in
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
-values with incremental increases in cluster values. I might also expect
-the lowest
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
-values to be at an intermediate number of clusters, between under and
-overfitting, depending on whether the range of clusters investigated was
-selected appropriately. It looks like the optimal combination is
+a continuous surface without major fluctuations in `k` values with
+incremental increases in cluster values. I might also expect the lowest
+`k` values to be at an intermediate number of clusters, between under
+and overfitting, depending on whether the range of clusters investigated
+was selected appropriately. It looks like the optimal combination is
 somewhere around 13 spatial and 11 temporal clusters. Let’s check this
-properly, then run the biclustering using the optimal
-![r.c](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;r.c "r.c")
-combination:
+properly, then run the biclustering using the optimal `rc` combination:
 
 ``` r
 #visualize a handful of best models
@@ -393,8 +357,7 @@ head(idx[order(idx$out.k),])
     ## 143    13    12 3484.812
 
 Indeed, the best combination is 13 site and 11 time clusters, by &gt;2
-![k](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;k "k")
-values relative to the next best model. According to the AIC rule of
+`k` values relative to the next best model. According to the AIC rule of
 thumb, this means that it is unequivocally the best fitting model.
 
 ## Defining the stratification
@@ -532,8 +495,9 @@ ggplot() +
   scale_fill_manual(values = unique(clust.points$colvar))+
   scale_x_continuous(limits = c(-11,44), breaks = seq(-10, 40, by=10)) +
   theme(legend.text=element_text(size=22),legend.position = 'bottom',
-        legend.spacing.x = unit(0.5,'cm'),legend.spacing.y = unit(0.5,'cm'),
-        legend.title=element_blank() , 
+        legend.spacing.x = unit(0.5,'cm'), legend.spacing.y = unit(0.5,'cm'),
+        legend.key.height = unit(1.5, 'cm'), legend.key.width = unit(1.5, 'cm'),
+        legend.title=element_blank(), 
         panel.background = element_rect(fill = "aliceblue"), 
         axis.text = element_text(size=18, face='bold', colour = 'black'), 
         axis.title = element_text(size=18, face='bold', colour = 'black'), 
@@ -543,7 +507,7 @@ ggplot() +
   geom_sf(data = world, fill="transparent", color="grey80")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 This is the final stratification, which represents spatial clusters of
 coherent fire-relevant environmental change over the Holocene (numbered
