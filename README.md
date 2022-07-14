@@ -76,12 +76,12 @@ ggplot() +
   scale_fill_gradient2(low="red", high="forestgreen", mid = 'white', midpoint = 0)+
   scale_x_continuous(limits = c(-11,44), breaks = seq(-10, 40, by=10)) +
   theme(legend.text=element_text(size=22),legend.position = 'bottom',
-  legend.spacing.x = unit(0.5,'cm'),legend.spacing.y = unit(0.5,'cm'),
-  legend.key.height = unit(2, 'cm'), legend.key.width = unit(6, 'cm'),
-  legend.title=element_blank() , panel.background = element_rect(fill = "aliceblue"),
-  axis.text = element_text(size=18, face='bold', colour = 'black'),
-  axis.title = element_text(size=22, face='bold', colour = 'black'), 
-  title = element_text(size = 10, colour = 'black'))+
+    legend.spacing.x = unit(0.5,'cm'),legend.spacing.y = unit(0.5,'cm'),
+    legend.key.height = unit(2, 'cm'), legend.key.width = unit(6, 'cm'),
+    legend.title=element_blank() , panel.background = element_rect(fill = "aliceblue"),
+    axis.text = element_text(size=18, face='bold', colour = 'black'),
+    axis.title = element_text(size=22, face='bold', colour = 'black'), 
+    title = element_text(size = 10, colour = 'black'))+
   scale_y_continuous(limits = c(29, 73), breaks = seq(30, 90, by=10)) +
   labs(x = "", y =  "")+
   geom_sf(data = world, fill="transparent", color="grey80")
@@ -370,7 +370,8 @@ function to get the final clustering output:
 mn <- idx[idx$out.k == min(idx$out.k),] 
 
 #run best biclustering
-bestbc <- biclustermd::rep_biclustermd(bcdat, nrep = 500, col_clusters = mn$col_t, row_clusters = mn$row_s)
+bestbc <- biclustermd::rep_biclustermd(bcdat, nrep = 500, col_clusters = mn$col_t,
+                                       row_clusters = mn$row_s)
 ```
 
 Let’s see what the output looks like:
@@ -408,7 +409,8 @@ discarding the repetition of this information for each time point:
 
 ``` r
 # get entity IDs and associated cluster:
-map_clusters <- bestbc_assign[bestbc_assign$col_name == bestbc_assign$col_name[1], c("row_name", "row_cluster")]
+map_clusters <- bestbc_assign[bestbc_assign$col_name == bestbc_assign$col_name[1],
+                              c("row_name", "row_cluster")]
 length(unique(map_clusters$row_name));length(unique(map_clusters$row_cluster))
 ```
 
@@ -495,13 +497,13 @@ ggplot() +
   scale_fill_manual(values = unique(clust.points$colvar))+
   scale_x_continuous(limits = c(-11,44), breaks = seq(-10, 40, by=10)) +
   theme(legend.text=element_text(size=22),legend.position = 'bottom',
-        legend.spacing.x = unit(0.5,'cm'), legend.spacing.y = unit(0.5,'cm'),
-        legend.key.height = unit(1.5, 'cm'), legend.key.width = unit(1.5, 'cm'),
-        legend.title=element_blank(), 
-        panel.background = element_rect(fill = "aliceblue"), 
-        axis.text = element_text(size=18, face='bold', colour = 'black'), 
-        axis.title = element_text(size=18, face='bold', colour = 'black'), 
-        title = element_text(size = 10, colour = 'black'))+
+      legend.spacing.x = unit(0.5,'cm'), legend.spacing.y = unit(0.5,'cm'),
+      legend.key.height = unit(1.5, 'cm'), legend.key.width = unit(1.5, 'cm'),
+      legend.title=element_blank(), 
+      panel.background = element_rect(fill = "aliceblue"), 
+      axis.text = element_text(size=18, face='bold', colour = 'black'), 
+      axis.title = element_text(size=18, face='bold', colour = 'black'), 
+      title = element_text(size = 10, colour = 'black'))+
   scale_y_continuous(limits = c(29, 73), breaks = seq(30, 90, by=10)) +
   labs(x = "", y =  "")+
   geom_sf(data = world, fill="transparent", color="grey80")
@@ -528,15 +530,15 @@ the past 12000 years.
 J. Li, J. Reisner, H. Pham, S. Olafsson, and S. Vardeman. Biclustering
 with missing data. *Information sciences*, 510:304–316, 2020.
 
-Marc Joris Metzger, Robert Gerald Henry Bunce, Rob HG Jongman, Caspar A
-Mucher, and John W Watkins. A climatic stratification of the environment
-of europe. *Global* *ecology and biogeography*, 14(6):549–563, 2005.
-
-A Mauri, BAS Davis, PM Collins, and Jed O Kaplan. The climate of europe
+A. Mauri, BAS. Davis, PM. Collins, and JO. Kaplan. The climate of europe
 during the holocene: a gridded pollen-based reconstruction and its
-multi-proxy evaluation. *Quaternary Science Reviews*, 112:109–127, 2015.
+multi-proxy evaluation. *Quaternary science reviews*, 112:109–127, 2015.
 
-Marco Zanon, Basil AS Davis, Laurent Marquer, Simon Brewer, and Jed O
-Kaplan. European forest cover during the past 12,000 years: a
-palynological reconstruction based on modern analogs and remote sensing.
-*Frontiers in plant science*, 9:253, 2018.
+MJ. Metzger, RGH. Bunce, RHG. Jongman, CA. Mucher, and JW. Watkins. A
+climatic stratification of the environment of europe. *Global* *ecology
+and biogeography*, 14(6):549–563, 2005.
+
+M. Zanon, BAS. Davis, L. Marquer, S. Brewer, and JO. Kaplan. European
+forest cover during the past 12,000 years: a palynological
+reconstruction based on modern analogs and remote sensing. *Frontiers in
+plant science*, 9:253, 2018.
