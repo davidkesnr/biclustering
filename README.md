@@ -208,7 +208,7 @@ numCores
 
     ## [1] 15
 
-The output indicates that I am recruiting 15 CPU’s for the loop.
+The output indicates that I am recruiting 15 cores for the loop.
 
 The `foreach` loop uses a single index vector as a loop counter, but I
 need to be able to loop through two indices simultaneously (one for `r`
