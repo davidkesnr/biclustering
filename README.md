@@ -22,19 +22,19 @@ library(rnaturalearth)
 
 In this analysis, I attempt to define a European spatial stratification
 that separates regions of coherent environmental change with specific
-relevance for wildfire activity over multiple millennia. To do this, I
-use a biclustering algorithm to group spatiotemporal environmental
-datasets spanning the Holocene epoch. The variables chosen to represent
+relevance for wildfire activity at a millennial timescale. To do this, I
+use a biclustering algorithm to group spatiotemporal environmental data
+which covers the Holocene epoch. The variables chosen to represent
 fire-relevant environmental change are summer temperature and summer
-precipitation anomalies, representing fire season dryness, from the
-Mauri et al. (2015) dataset, as well as forest cover percentage data
-from the Zanon et al. (2018) dataset, representing vegetation available
-to burn as fuel. The three datasets have been processed from their
-original netcdf format into .csv files at the same spatial and temporal
-resolution, and the forest cover values have been anomalized to match
-the Mauri et al. (2015) climate data.
+precipitation anomalies, representing fire season climate dryness, from
+the Mauri et al. (2015) dataset, as well as forest cover percentage data
+from the Zanon et al. (2018) dataset, which represents the amount of
+biomass available to burn as fuel. The three datasets have been
+processed from their original netCDF format into .csv files, and the
+forest cover values have been anomalized to match the Mauri et
+al. (2015) climate data.
 
-Let’s visualize the forest cover data:
+Let’s see what the forest cover data looks like:
 
 ``` r
 #read in forest data
@@ -57,11 +57,11 @@ unique(forest$year)
     ##  [1]   100  1000  2000  3000  4000  5000  6000  7000  8000  9000 10000 11000
     ## [13] 12000
 
-The data is structured with multiple time points per grid cell, and each
-grid cell has an associated ID in the `ID_ENTITY` column. We can see
-that the data is at a 1000-year time step spanning the 0-12000BP
-interval and is expressed as anomalies relative to a 100
-years-before-present (BP) value. Let’s plot one time slice:
+The data is structured with multiple time points per grid cell, with
+each grid cell having an associated ID in the `ID_ENTITY` column. We can
+see that the data is at a 1000-year time step spanning the 0-12000 years
+before present (BP) interval and is expressed as anomalies relative to a
+100BP value. Let’s plot one time slice:
 
 ``` r
 #get the world outline shapefile:
@@ -89,11 +89,12 @@ ggplot() +
 
 ![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-It’s evident in the plot that forest cover was generally higher across
+It’s evident from the plot that forest cover was generally higher across
 Europe at 3000BP relative to 100BP. We also learn from this plot that
 the data covers a range of roughly 30-70 degrees north in latitude, and
 has a longitudinal range from 10 degrees west to about 43 degrees east.
-The climate data has the same data coverage.
+The climate datasets have the same data coverage and resolution, and are
+also expressed as anomalies relative to 100BP.
 
 ## Data preparation
 
@@ -113,15 +114,13 @@ single dataframe, aligning them by their grid-cell ID’s. This creates a
 dataframe with 13x3 time points.
 
 There are a few problems that this introduces. One is that the variables
-are in different units: summer temperature and precipitation are
-provided as anomalies relative to the 100BP time bin, expressed in
-degrees Celsius and mm/month, and forest cover is provided as
-percentages. This makes the three variables span orders of magnitude.
-Clustering them in their native units will result in the variables on
-higher orders of magnitude to reduce the visibility of the variation in
-variables on lower orders of magnitude to the algorithm. To circumvent
-this, I have scaled the three variables to have identical interquartile
-ranges.
+are in different units: contrary to the percentages of forest cover,
+summer temperature and precipitation are expressed in degrees Celsius
+and mm/month respectively. This makes the three variables span orders of
+magnitude. Clustering them in their native units will cause the
+variables on higher orders of magnitude to reduce the visibility of the
+variation in the other variables to the algorithm. To circumvent this, I
+have scaled the three variables to have identical interquartile ranges.
 
 I have also removed the 100BP time points because they contain no
 variation and will not influence the clustering results.
@@ -191,14 +190,16 @@ The `rc` combination that results in the lowest value of `k` is selected
 as the optimal combination. We can now use this algorithm to select from
 multiple `rc` combinations, and see which minimizes this value `k`.
 
-Since the biclustering algorithm can be computationally intensive, and I
+Since the biclustering algorithm can be computationally intensive and I
 run it tens or possibly hundreds of times to find the best `rc`
-combination, this section of the analysis is best done by using a loop,
-which runs multiple loop iterations simultaneously by distributing them
-across multiple CPU’s. To do this, I use the `foreach` and `parallel`
-packages. First, I register the number of cores to recruit for this
-purpose. I leave one core for available for general computation outside
-of R:
+combination, it is best to automate this section of the analysis. This
+can be achieved using a loop. A conventional `for` loop comes to mind,
+but the efficiency of the loop can be multiplied by distributing loop
+iterations across multiple CPU’s, thereby allowing multiple loop
+iterations to run simultaneously. To do this, I use the `foreach` and
+`parallel` packages. First, I register the number of CPU cores to
+recruit for this purpose. I leave one core for available for general
+computation outside of R:
 
 ``` r
 numCores <- detectCores()-1 #get number of cores
@@ -207,16 +208,15 @@ numCores
 
     ## [1] 15
 
-I am recruiting 15 CPU’s for the biclustering.
+The output indicates that I am recruiting 15 CPU’s for the loop.
 
 The `foreach` loop uses a single index vector as a loop counter, but I
-need to be able to loop through two indices (one for `r` and one for
-`c`) simultaneously. To achieve this, I make a dataframe with all
-combinations of individual `rc` pairs, and will use the row index of the
+need to be able to loop through two indices simultaneously (one for `r`
+and one for `c`). To achieve this, I make a dataframe with all
+combinations of individual `rc` pairs, and use the row index of the
 dataframe as the `foreach` loop counter to sequentially extract and run
-the ``` r``c ``` combination contained in each row. I set the range of
-site clusters to attempt from 2 to 18, and the time clusters from 2 to
-13:
+the `rc` combination contained in each row. I set the range of site
+clusters to attempt from 2 to 18 and the time clusters from 2 to 13:
 
 ``` r
 #get an index dataframe
@@ -245,9 +245,10 @@ nrow(idx)
 
     ## [1] 204
 
-There are 204 rows, which agrees with all possible combinations (12x17),
-and the alignment of the site and time clusters appears correct, with
-each site cluster value having 2-13 time clusters.
+There are 204 rows, which agrees with all possible combinations (17 site
+x 12 time clusters), and the alignment of the site and time clusters
+appears correct, with each site cluster value being aligned to 2-13 time
+clusters.
 
 I am ready to run the `foreach` loop. I’ll calculate the `k` metric for
 each loop iteration, and for this I need to have the total number of
@@ -310,7 +311,7 @@ labelled columns in the numeric order of the row index of the `idx`
 dataframe. Since we know the order of rows of the `idx` dataframe is
 congruent with the order of the output of the `foreach` loop, to
 visualize the output I can prep a simple matrix with rows and columns
-labelled according to the `idx` site and time clusters for plotting:
+labelled according to the `idx` site and time clusters, for plotting:
 
 ``` r
 idx$out.k <- t(output)
@@ -336,12 +337,12 @@ plot(mat.k, key=list(side=3, cex.axis=0.75), palette('Dark2'), digits=2,
 
 The surface appears to be doing what is expected - I would expect to see
 a continuous surface without major fluctuations in `k` values with
-incremental increases in cluster values. I might also expect the lowest
-`k` values to be at an intermediate number of clusters, between under
-and overfitting, depending on whether the range of clusters investigated
-was selected appropriately. It looks like the optimal combination is
-somewhere around 13 spatial and 11 temporal clusters. Let’s check this
-properly, then run the biclustering using the optimal `rc` combination:
+incremental increases in cluster values, except at very low cluster
+values. I might also expect the lowest `k` values to be at an
+intermediate number of clusters, between under and overfitting. It looks
+like the optimal combination is somewhere around 13 spatial and 11
+temporal clusters. Let’s check this properly, then run the biclustering
+using the optimal `rc` combination:
 
 ``` r
 #visualize a handful of best models
@@ -357,8 +358,9 @@ head(idx[order(idx$out.k),])
     ## 143    13    12 3484.812
 
 Indeed, the best combination is 13 site and 11 time clusters, by &gt;2
-`k` values relative to the next best model. According to the AIC rule of
-thumb, this means that it is unequivocally the best fitting model.
+`k` values relative to the next best model. According to AIC
+conventions, this is an indication that it is unequivocally the best
+fitting model.
 
 ## Defining the stratification
 
@@ -402,10 +404,11 @@ head(bestbc_assign)
     ## 6       72 tsumm_1000           1           1            1 0.4701808
 
 Each row of this dataframe represents a single cell of the input
-dataset, showing its row and column names in the input dataset, and the
+dataset, showing its row and column names in the input dataset and the
 site and time clusters that the row was assigned to. This allows me to
 get a list of the entity ID’s and their site cluster assignments, while
-discarding the repetition of this information for each time point:
+discarding the same information that has been repeated for each time
+point:
 
 ``` r
 # get entity IDs and associated cluster:
@@ -418,9 +421,9 @@ length(unique(map_clusters$row_name));length(unique(map_clusters$row_cluster))
 
     ## [1] 13
 
-In agreement with the input data and the biclustering specification
-there are 1126 sites which have been put into and 13 site clusters.
-Let’s name the columns appropriately:
+In agreement with the input data and the biclustering specification,
+there are 1126 sites which have been put into 13 site clusters. Let’s
+name the columns appropriately:
 
 ``` r
 names(map_clusters) <- c('ID_ENTITY', 'Site_cluster') 
@@ -436,8 +439,7 @@ head(map_clusters)
     ## 6        72            1
 
 Before we can visualize these clusters on a map, we need to attach the
-spatial coordinates of each entity to this data. I use the input
-dataframe which came with this data:
+spatial coordinates of each entity to this data:
 
 ``` r
 #get entity data:
